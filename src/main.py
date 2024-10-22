@@ -5,7 +5,7 @@ import argparse
 from datetime import datetime 
 from input_parser import parse_input_text
 from ppt_generator import generate_presentation
-from template_manager import load_template, print_layouts
+from template_manager import load_template, print_layouts, get_layout_mapping
 from layout_manager import LayoutManager
 from config import Config
 from logger import LOG  # 引入 LOG 模块
@@ -15,7 +15,7 @@ def main(input_file, template_type="standard"):
     config = Config()  # 加载配置文件
     
     # 根据传入的 template_type 动态选择模板
-    ppt_template, layout_mapping = config.get_template_info(template_type)
+    ppt_template, config_layout_mapping = config.get_template_info(template_type)
 
     # 检查输入的 markdown 文件是否存在
     if not os.path.exists(input_file):
@@ -32,8 +32,14 @@ def main(input_file, template_type="standard"):
     LOG.info("可用的幻灯片布局:")  # 记录信息日志，打印可用布局
     print_layouts(prs)  # 打印模板中的布局
 
-    # 初始化 LayoutManager，使用模板的 layout_mapping
+    # 初始化 LayoutManager，使用配置文件中的 layout_mapping
+    # layout_manager = LayoutManager(config_layout_mapping)
+    
+    # 动态获取布局映射,传入动态获取的 layout_mapping
+    layout_mapping = get_layout_mapping(prs)
     layout_manager = LayoutManager(layout_mapping)
+
+
 
     # 调用 parse_input_text 函数，解析输入文本，生成 PowerPoint 数据结构
     powerpoint_data, presentation_title = parse_input_text(input_text, layout_manager)

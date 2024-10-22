@@ -4,41 +4,28 @@
         "standard": {
             "ppt_template": "templates/StandardTemplate.pptx",
             "layout_mapping": {
-                "Title Only": 0,
-                "Title and Content": 1,
-                "Title and Picture": 2,
-                "Title, Content, and Picture":3,
-                "Titel and 2 Column 1":4,
-                "Title and Content 1":5
+                "Title Only": 1,
+                "Title and Content": 2,
+                "Title and Picture": 3,
+                "Title, Content, and Picture":4
             }
         },
         "master": {
             "ppt_template": "templates/MasterTemplate.pptx",
             "layout_mapping": {
-                "Title": 0,
-                "Right Pattern Content": 1,
-                "Overview": 2,
-                "Chart Slide": 3,
-                "Left Pattern Content": 4,
-                "Smart Art": 5,
-                "Two Photo Content": 6,
-                "Right Pattern Content Blue title": 7,
-                "Questions": 8,
-                "Left Pattern Content Orange Title": 9
+                "Title Only": 1,
+                "Title and Content": 2,
+                "Title and Picture": 3,
+                "Title, Content, and Picture":4
             }
         },
         "extra": {
             "ppt_template": "templates/ExtraTemplate.pptx",
             "layout_mapping": {
-                "Title": 0,
-                "About us": 1,
-                "Problem":2,
-                "Solution":3,
-                "Product Overview":4,
-                "Product Benefits":5,
-                "Divider Slide":6,
-                "Summary":19,
-                "Thank You":20
+                "Title Only": 1,
+                "Title and Content": 2,
+                "Title and Picture": 3,
+                "Title, Content, and Picture":4
             }
         }
     }
