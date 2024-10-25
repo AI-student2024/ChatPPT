@@ -1,0 +1,215 @@
+usage: jupyter [-h] [--version] [--config-dir] [--data-dir] [--runtime-dir]
+               [--paths] [--json] [--debug]
+               [subcommand]
+
+Jupyter: Interactive Computing
+
+positional arguments:
+  subcommand     the subcommand to launch
+
+options:
+  -h, --help     show this help message and exit
+  --version      show the versions of core jupyter packages and exit
+  --config-dir   show Jupyter config dir
+  --data-dir     show Jupyter data dir
+  --runtime-dir  show Jupyter runtime dir
+  --paths        show all Jupyter paths. Add --json for machine-readable
+                 format.
+  --json         output paths as machine-readable json
+  --debug        output debug information about paths
+
+Available subcommands: bundlerextension console dejavu events execute fileid
+kernel kernelspec lab labextension labhub migrate nbclassic nbconvert
+nbextension notebook qtconsole run script server serverextension troubleshoot
+trust
+
+Please specify a subcommand or one of the optional arguments.
+usage: jupyter-notebook [-h] [--debug] [--show-config] [--show-config-json]
+                        [--generate-config] [-y] [--no-browser] [--no-mathjax]
+                        [--allow-root] [--autoreload] [--script] [--no-script]
+                        [--log-level NotebookApp.log_level]
+                        [--config NotebookApp.config_file]
+                        [--ip NotebookApp.ip] [--port NotebookApp.port]
+                        [--port-retries NotebookApp.port_retries]
+                        [--sock NotebookApp.sock]
+                        [--sock-mode NotebookApp.sock_mode]
+                        [--transport KernelManager.transport]
+                        [--keyfile NotebookApp.keyfile]
+                        [--certfile NotebookApp.certfile]
+                        [--client-ca NotebookApp.client_ca]
+                        [--notebook-dir NotebookApp.notebook_dir]
+                        [--browser NotebookApp.browser]
+                        [--pylab [NotebookApp.pylab]]
+                        [--gateway-url GatewayClient.url]
+                        [extra_args ...]
+jupyter-notebook: error: unrecognized arguments: --no-browers
+[C 2024-10-25 14:35:09.176 ServerApp] Bad config encountered during initialization: Error loading argument notebook.dir=['./'], 'LazyConfigValue' object does not support item assignment
+[C 2024-10-25 14:35:50.549 ServerApp] Bad config encountered during initialization: Error loading argument notebook.dir=['./'], 'LazyConfigValue' object does not support item assignment
+[C 2024-10-25 14:36:55.329 ServerApp] Bad config encountered during initialization: Error loading argument notebook.dir=['./'], 'LazyConfigValue' object does not support item assignment
+[I 2024-10-25 14:42:17.806 ServerApp] jupyter_server_fileid | extension was successfully linked.
+[I 2024-10-25 14:42:17.816 ServerApp] jupyter_server_ydoc | extension was successfully linked.
+[W 2024-10-25 14:42:17.820 LabApp] 'token' has moved from NotebookApp to ServerApp. This config will be passed to ServerApp. Be sure to update your config before our next release.
+[W 2024-10-25 14:42:17.820 LabApp] 'notebook_dir' has moved from NotebookApp to ServerApp. This config will be passed to ServerApp. Be sure to update your config before our next release.
+[W 2024-10-25 14:42:17.823 ServerApp] notebook_dir is deprecated, use root_dir
+[I 2024-10-25 14:42:17.823 ServerApp] jupyterlab | extension was successfully linked.
+[I 2024-10-25 14:42:17.829 ServerApp] nbclassic | extension was successfully linked.
+[I 2024-10-25 14:42:18.649 ServerApp] notebook_shim | extension was successfully linked.
+[I 2024-10-25 14:42:18.649 ServerApp] panel.io.jupyter_server_extension | extension was successfully linked.
+[W 2024-10-25 14:42:18.700 ServerApp] WARNING: The Jupyter server is listening on all IP addresses and not using encryption. This is not recommended.
+[I 2024-10-25 14:42:18.701 ServerApp] notebook_shim | extension was successfully loaded.
+[I 2024-10-25 14:42:18.701 FileIdExtension] Configured File ID manager: ArbitraryFileIdManager
+[I 2024-10-25 14:42:18.702 FileIdExtension] ArbitraryFileIdManager : Configured root dir: D:/AgentsDEV/ChatPPT
+[I 2024-10-25 14:42:18.702 FileIdExtension] ArbitraryFileIdManager : Configured database path: C:\Users\zf\AppData\Roaming\jupyter\file_id_manager.db
+[I 2024-10-25 14:42:18.707 FileIdExtension] ArbitraryFileIdManager : Successfully connected to database file.
+[I 2024-10-25 14:42:18.707 FileIdExtension] ArbitraryFileIdManager : Creating File ID tables and indices with journal_mode = DELETE
+[I 2024-10-25 14:42:18.711 ServerApp] jupyter_server_fileid | extension was successfully loaded.
+[I 2024-10-25 14:42:18.712 ServerApp] jupyter_server_ydoc | extension was successfully loaded.
+[I 2024-10-25 14:42:18.712 LabApp] JupyterLab extension loaded from D:\anacondaInstall\Lib\site-packages\jupyterlab
+[I 2024-10-25 14:42:18.713 LabApp] JupyterLab application directory is D:\anacondaInstall\share\jupyter\lab
+[I 2024-10-25 14:42:18.716 ServerApp] jupyterlab | extension was successfully loaded.
+
+  _   _          _      _
+ | | | |_ __  __| |__ _| |_ ___
+ | |_| | '_ \/ _` / _` |  _/ -_)
+  \___/| .__/\__,_\__,_|\__\___|
+       |_|
+                                                                           
+Read the migration plan to Notebook 7 to learn about the new features and the actions to take if you are using extensions.
+
+https://jupyter-notebook.readthedocs.io/en/latest/migrate_to_notebook7.html
+
+Please note that updating to Notebook 7 might break some of your extensions.
+
+[I 2024-10-25 14:42:18.725 ServerApp] nbclassic | extension was successfully loaded.
+[I 2024-10-25 14:42:18.726 ServerApp] panel.io.jupyter_server_extension | extension was successfully loaded.
+[I 2024-10-25 14:42:18.726 ServerApp] Serving notebooks from local directory: D:\AgentsDEV\ChatPPT
+[I 2024-10-25 14:42:18.726 ServerApp] Jupyter Server 1.23.4 is running at:
+[I 2024-10-25 14:42:18.726 ServerApp] http://localhost:8000/lab?token=...
+[I 2024-10-25 14:42:18.726 ServerApp]  or http://127.0.0.1:8000/lab?token=...
+[I 2024-10-25 14:42:18.727 ServerApp] Use Control-C to stop this server and shut down all kernels (twice to skip confirmation).
+[I 2024-10-25 14:43:29.190 ServerApp] 302 GET / (::1) 0.00ms
+[I 2024-10-25 14:43:29.201 LabApp] 302 GET /lab? (::1) 1.29ms
+[I 2024-10-25 14:43:34.248 ServerApp] 302 POST /login?next=%2Flab%3F (::1) 2.90ms
+0.01s - Debugger warning: It seems that frozen modules are being used, which may
+0.00s - make the debugger miss breakpoints. Please pass -Xfrozen_modules=off
+0.00s - to python to disable frozen modules.
+0.00s - Note: Debugging will proceed. Set PYDEVD_DISABLE_FILE_VALIDATION=1 to disable this validation.
+[W 2024-10-25 14:43:36.644 ServerApp] 404 GET /api/me?1729838615774 (::1) 8.42ms referer=http://localhost:8000/lab?
+[W 2024-10-25 14:43:36.854 LabApp] Failed validating settings (@jupyterlab/notebook-extension:tracker): False is not of type 'string'
+    
+    Failed validating 'type' in schema['properties']['codeCellConfig']['properties']['lineWrap']:
+        {'enum': ['off', 'on', 'wordWrapColumn', 'bounded'],
+         'title': 'Line Wrap',
+         'type': 'string'}
+    
+    On instance['codeCellConfig']['lineWrap']:
+        False
+[W 2024-10-25 14:43:38.277 LabApp] Could not determine jupyterlab build status without nodejs
+[W 2024-10-25 14:43:40.350 ServerApp] 404 GET /api/contents/langchain/langgraph/hw_reflection_agent_NewChanel.ipynb?content=0&1729838620253 (::1): file or directory does not exist: 'langchain/langgraph/hw_reflection_agent_NewChanel.ipynb'
+[W 2024-10-25 14:43:40.351 ServerApp] wrote error: "file or directory does not exist: 'langchain/langgraph/hw_reflection_agent_NewChanel.ipynb'"
+[W 2024-10-25 14:43:40.351 ServerApp] 404 GET /api/contents/langchain/langgraph/hw_reflection_agent_NewChanel.ipynb?content=0&1729838620253 (::1) 82.12ms referer=http://localhost:8000/lab?
+[W 2024-10-25 14:43:40.929 LabApp] Failed validating settings (@jupyterlab/notebook-extension:tracker): False is not of type 'string'
+    
+    Failed validating 'type' in schema['properties']['codeCellConfig']['properties']['lineWrap']:
+        {'enum': ['off', 'on', 'wordWrapColumn', 'bounded'],
+         'title': 'Line Wrap',
+         'type': 'string'}
+    
+    On instance['codeCellConfig']['lineWrap']:
+        False
+[W 2024-10-25 14:43:41.016 ServerApp] 404 GET /api/contents/langchain/langgraph?1729838621008 (::1): file or directory does not exist: 'langchain/langgraph'
+[W 2024-10-25 14:43:41.017 ServerApp] wrote error: "file or directory does not exist: 'langchain/langgraph'"
+[W 2024-10-25 14:43:41.017 ServerApp] 404 GET /api/contents/langchain/langgraph?1729838621008 (::1) 5.07ms referer=http://localhost:8000/lab?
+[W 2024-10-25 14:43:47.387 ServerApp] Notebook jupyter/pptx_quickstart.ipynb is not trusted
+[I 2024-10-25 14:43:48.457 ServerApp] Kernel started: c004bd49-0ec1-489a-ab54-b7af492bafb4
+0.00s - Debugger warning: It seems that frozen modules are being used, which may
+0.00s - make the debugger miss breakpoints. Please pass -Xfrozen_modules=off
+0.00s - to python to disable frozen modules.
+0.00s - Note: Debugging will proceed. Set PYDEVD_DISABLE_FILE_VALIDATION=1 to disable this validation.
+[W 2024-10-25 14:43:49.715 ServerApp] Got events for closed stream <zmq.eventloop.zmqstream.ZMQStream object at 0x0000015CD54C6E90>
+[I 2024-10-25 14:45:48.382 ServerApp] Saving file at /jupyter/pptx_quickstart.ipynb
+[W 2024-10-25 14:45:48.384 ServerApp] Notebook jupyter/pptx_quickstart.ipynb is not trusted
+[W 2024-10-25 14:49:43.377 ServerApp] 400 GET /api/contents/jupyter/ChatPPT_Demo.pptx?type=file&content=1&format=text&1729838983318 (::1): D:\AgentsDEV\ChatPPT\jupyter\ChatPPT_Demo.pptx is not UTF-8 encoded
+[W 2024-10-25 14:49:43.377 ServerApp] wrote error: 'D:\\AgentsDEV\\ChatPPT\\jupyter\\ChatPPT_Demo.pptx is not UTF-8 encoded'
+[W 2024-10-25 14:49:43.378 ServerApp] 400 GET /api/contents/jupyter/ChatPPT_Demo.pptx?type=file&content=1&format=text&1729838983318 (::1) 7.21ms referer=http://localhost:8000/lab/tree/jupyter/pptx_quickstart.ipynb
+[W 2024-10-25 14:49:52.141 ServerApp] 400 GET /api/contents/jupyter/ChatPPT_Demo.pptx?type=file&content=1&format=text&1729838992135 (::1): D:\AgentsDEV\ChatPPT\jupyter\ChatPPT_Demo.pptx is not UTF-8 encoded
+[W 2024-10-25 14:49:52.142 ServerApp] wrote error: 'D:\\AgentsDEV\\ChatPPT\\jupyter\\ChatPPT_Demo.pptx is not UTF-8 encoded'
+[W 2024-10-25 14:49:52.142 ServerApp] 400 GET /api/contents/jupyter/ChatPPT_Demo.pptx?type=file&content=1&format=text&1729838992135 (::1) 3.38ms referer=http://localhost:8000/lab/tree/jupyter/pptx_quickstart.ipynb
+[I 2024-10-25 17:08:10.641 ServerApp] jupyter_server_fileid | extension was successfully linked.
+[I 2024-10-25 17:08:10.645 ServerApp] jupyter_server_ydoc | extension was successfully linked.
+[I 2024-10-25 17:08:10.650 ServerApp] jupyterlab | extension was successfully linked.
+[I 2024-10-25 17:08:10.653 ServerApp] nbclassic | extension was successfully linked.
+[I 2024-10-25 17:08:10.875 ServerApp] notebook_shim | extension was successfully linked.
+[I 2024-10-25 17:08:10.875 ServerApp] panel.io.jupyter_server_extension | extension was successfully linked.
+[W 2024-10-25 17:08:10.912 ServerApp] WARNING: The Jupyter server is listening on all IP addresses and not using encryption. This is not recommended.
+[I 2024-10-25 17:08:10.914 ServerApp] notebook_shim | extension was successfully loaded.
+[I 2024-10-25 17:08:10.915 FileIdExtension] Configured File ID manager: ArbitraryFileIdManager
+[I 2024-10-25 17:08:10.915 FileIdExtension] ArbitraryFileIdManager : Configured root dir: D:/AgentsDEV/ChatPPT
+[I 2024-10-25 17:08:10.915 FileIdExtension] ArbitraryFileIdManager : Configured database path: C:\Users\zf\AppData\Roaming\jupyter\file_id_manager.db
+[I 2024-10-25 17:08:10.915 FileIdExtension] ArbitraryFileIdManager : Successfully connected to database file.
+[I 2024-10-25 17:08:10.916 FileIdExtension] ArbitraryFileIdManager : Creating File ID tables and indices with journal_mode = DELETE
+[I 2024-10-25 17:08:10.916 ServerApp] jupyter_server_fileid | extension was successfully loaded.
+[I 2024-10-25 17:08:10.918 ServerApp] jupyter_server_ydoc | extension was successfully loaded.
+[I 2024-10-25 17:08:10.919 LabApp] JupyterLab extension loaded from D:\anacondaInstall\Lib\site-packages\jupyterlab
+[I 2024-10-25 17:08:10.919 LabApp] JupyterLab application directory is D:\anacondaInstall\share\jupyter\lab
+[I 2024-10-25 17:08:10.924 ServerApp] jupyterlab | extension was successfully loaded.
+
+  _   _          _      _
+ | | | |_ __  __| |__ _| |_ ___
+ | |_| | '_ \/ _` / _` |  _/ -_)
+  \___/| .__/\__,_\__,_|\__\___|
+       |_|
+                                                                           
+Read the migration plan to Notebook 7 to learn about the new features and the actions to take if you are using extensions.
+
+https://jupyter-notebook.readthedocs.io/en/latest/migrate_to_notebook7.html
+
+Please note that updating to Notebook 7 might break some of your extensions.
+
+[I 2024-10-25 17:08:10.932 ServerApp] nbclassic | extension was successfully loaded.
+[I 2024-10-25 17:08:10.932 ServerApp] panel.io.jupyter_server_extension | extension was successfully loaded.
+[I 2024-10-25 17:08:10.932 ServerApp] Serving notebooks from local directory: D:\AgentsDEV\ChatPPT
+[I 2024-10-25 17:08:10.933 ServerApp] Jupyter Server 1.23.4 is running at:
+[I 2024-10-25 17:08:10.933 ServerApp] http://localhost:8000/lab?token=0f3ffc7eab24e79f105ee7e7c4495374ce8bf860ec4af13c
+[I 2024-10-25 17:08:10.933 ServerApp]  or http://127.0.0.1:8000/lab?token=0f3ffc7eab24e79f105ee7e7c4495374ce8bf860ec4af13c
+[I 2024-10-25 17:08:10.933 ServerApp] Use Control-C to stop this server and shut down all kernels (twice to skip confirmation).
+[C 2024-10-25 17:08:11.007 ServerApp] 
+    
+    To access the server, open this file in a browser:
+        file:///C:/Users/zf/AppData/Roaming/jupyter/runtime/jpserver-14912-open.html
+    Or copy and paste one of these URLs:
+        http://localhost:8000/lab?token=0f3ffc7eab24e79f105ee7e7c4495374ce8bf860ec4af13c
+     or http://127.0.0.1:8000/lab?token=0f3ffc7eab24e79f105ee7e7c4495374ce8bf860ec4af13c
+0.00s - Debugger warning: It seems that frozen modules are being used, which may
+0.00s - make the debugger miss breakpoints. Please pass -Xfrozen_modules=off
+0.00s - to python to disable frozen modules.
+0.00s - Note: Debugging will proceed. Set PYDEVD_DISABLE_FILE_VALIDATION=1 to disable this validation.
+[W 2024-10-25 17:09:13.913 ServerApp] 404 GET /api/me?1729847353582 (127.0.0.1) 13.77ms referer=http://127.0.0.1:8000/lab
+[W 2024-10-25 17:09:13.989 LabApp] Failed validating settings (@jupyterlab/notebook-extension:tracker): False is not of type 'string'
+    
+    Failed validating 'type' in schema['properties']['codeCellConfig']['properties']['lineWrap']:
+        {'enum': ['off', 'on', 'wordWrapColumn', 'bounded'],
+         'title': 'Line Wrap',
+         'type': 'string'}
+    
+    On instance['codeCellConfig']['lineWrap']:
+        False
+[W 2024-10-25 17:09:15.177 LabApp] Could not determine jupyterlab build status without nodejs
+[W 2024-10-25 17:09:15.672 LabApp] Failed validating settings (@jupyterlab/notebook-extension:tracker): False is not of type 'string'
+    
+    Failed validating 'type' in schema['properties']['codeCellConfig']['properties']['lineWrap']:
+        {'enum': ['off', 'on', 'wordWrapColumn', 'bounded'],
+         'title': 'Line Wrap',
+         'type': 'string'}
+    
+    On instance['codeCellConfig']['lineWrap']:
+        False
+[W 2024-10-25 17:09:15.713 ServerApp] Notebook jupyter/pptx_quickstart.ipynb is not trusted
+[W 2024-10-25 17:09:16.011 ServerApp] 404 GET /images/slides.png (127.0.0.1) 1.25ms referer=http://127.0.0.1:8000/lab
+[I 2024-10-25 17:09:16.438 ServerApp] Kernel started: 732b98e0-1f87-456a-9013-0e179acb058a
+0.00s - Debugger warning: It seems that frozen modules are being used, which may
+0.00s - make the debugger miss breakpoints. Please pass -Xfrozen_modules=off
+0.00s - to python to disable frozen modules.
+0.00s - Note: Debugging will proceed. Set PYDEVD_DISABLE_FILE_VALIDATION=1 to disable this validation.
+[W 2024-10-25 17:09:17.582 ServerApp] Got events for closed stream <zmq.eventloop.zmqstream.ZMQStream object at 0x000001E0793F7810>
+[I 2024-10-25 17:09:19.231 ServerApp] Starting buffering for 732b98e0-1f87-456a-9013-0e179acb058a:8d0f732d-9897-440b-a613-534e23c40184
