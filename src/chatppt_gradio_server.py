@@ -1,5 +1,6 @@
 import gradio as gr
 import os
+from pathlib import Path
 from input_parser import parse_input_text
 from ppt_generator import generate_presentation
 from template_manager import load_template, print_layouts
@@ -16,13 +17,25 @@ if not api_key:
 
 client = OpenAI(api_key=api_key)
 
+# 项目根目录
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+# 提示词文件路径
+PROMPTS_DIR = BASE_DIR / "prompts"
+FORMATTER_FILE_PATH = PROMPTS_DIR / "formatter.txt"
+
+# 输出文件夹路径
+OUTPUTS_DIR = BASE_DIR / "outputs"
+
+# 创建输出文件夹（如果不存在）
+OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)
+
 def load_system_prompt():
-    file_path = os.path.join(os.path.dirname(__file__), "../prompts/formatter.txt")
-    LOG.info(f"加载系统提示词文件：{file_path}")
-    if not os.path.exists(file_path):
-        LOG.error(f"未找到系统提示词文件：{file_path}")
-        raise FileNotFoundError(f"文件未找到: {file_path}")
-    with open(file_path, "r", encoding="utf-8") as file:
+    LOG.info(f"加载系统提示词文件：{FORMATTER_FILE_PATH}")
+    if not FORMATTER_FILE_PATH.exists():
+        LOG.error(f"未找到系统提示词文件：{FORMATTER_FILE_PATH}")
+        raise FileNotFoundError(f"文件未找到: {FORMATTER_FILE_PATH}")
+    with FORMATTER_FILE_PATH.open("r", encoding="utf-8") as file:
         return file.read()
 
 def model_generate_markdown(user_input):
@@ -42,12 +55,11 @@ def model_generate_markdown(user_input):
 def generate_md_file(user_input):
     LOG.info("开始生成 Markdown 文件...")
     markdown_text = model_generate_markdown(user_input)
-    output_md = "outputs/chatppt_content.md"
-    os.makedirs(os.path.dirname(output_md), exist_ok=True)
-    with open(output_md, "w", encoding="utf-8") as md_file:
+    output_md_path = OUTPUTS_DIR / "chatppt_content.md"
+    with output_md_path.open("w", encoding="utf-8") as md_file:
         md_file.write(markdown_text)
-    LOG.info(f"Markdown 文件已保存到：{output_md}")
-    return output_md
+    LOG.info(f"Markdown 文件已保存到：{output_md_path}")
+    return str(output_md_path)  # 将 Path 转换为字符串
 
 def generate_pptx_from_md(md_path):
     LOG.info("开始将 Markdown 内容转换为 PPTX 文件...")
@@ -56,7 +68,7 @@ def generate_pptx_from_md(md_path):
     print_layouts(prs)
     layout_manager = LayoutManager(config.layout_mapping)
     
-    with open(md_path, "r", encoding="utf-8") as md_file:
+    with Path(md_path).open("r", encoding="utf-8") as md_file:
         markdown_text = md_file.read()
     
     powerpoint_data, presentation_title = parse_input_text(markdown_text, layout_manager)
@@ -65,11 +77,10 @@ def generate_pptx_from_md(md_path):
         presentation_title = "默认演示文稿"
         LOG.warning("演示文稿标题为空，已设置为默认名称。")
 
-    output_pptx = f"outputs/{presentation_title}.pptx"
-    os.makedirs(os.path.dirname(output_pptx), exist_ok=True)
-    generate_presentation(powerpoint_data, config.ppt_template, output_pptx)
-    LOG.info(f"PPTX 文件已保存到：{output_pptx}")
-    return output_pptx
+    output_pptx_path = OUTPUTS_DIR / f"{presentation_title}.pptx"
+    generate_presentation(powerpoint_data, config.ppt_template, output_pptx_path)
+    LOG.info(f"PPTX 文件已保存到：{output_pptx_path}")
+    return str(output_pptx_path)  # 将 Path 转换为字符串
 
 def handle_chat(message, chat_history):
     # 记录用户输入并向用户提供下一步提示
@@ -96,20 +107,20 @@ def generate_files(chat_history):
 with gr.Blocks() as demo:
     gr.Markdown("<h2 style='text-align: center;'>ChatPPT 生成器</h2>")
     
-    # 聊天交互和输入
-    chatbot = gr.Chatbot(label="ChatPPT 交互界面", type="messages")
+    chatbot = gr.Chatbot(
+        placeholder="<strong>你的ppt助手</strong><br><br>给我内容，一键生成pptx！",
+        height=800,
+        type="messages"  # 确保格式为 messages 类型
+    )
     msg = gr.Textbox(label="输入您的内容", placeholder="请输入您的内容")
-    
-    # 按钮用于生成文件
     generate_pptx_button = gr.Button("生成 PPTX 文件", variant="primary")
     
-    # 文件下载链接
     md_file = gr.File(label="下载 Markdown 文件")
     pptx_file = gr.File(label="下载 PPTX 文件")
-    
-    # 将文本框提交操作链接到聊天响应
+
+    # 连接消息输入框与聊天历史更新
     msg.submit(handle_chat, [msg, chatbot], [msg, chatbot])
-    
+
     # 连接“生成 PPTX”按钮与文件生成函数
     generate_pptx_button.click(generate_files, chatbot, [md_file, pptx_file])
 
