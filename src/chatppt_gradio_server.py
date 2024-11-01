@@ -110,7 +110,19 @@ def handle_text_input(message, chat_history):
     add_content_to_history(message, [])
     # 更新聊天历史
     chat_history.append({"role": "user", "content": message})
-    bot_response = "内容已保存。您可以继续输入下一段内容和图片，或者点击“生成 PPTX 文件”按钮以生成文件。"
+    # bot_response = "内容已保存。您可以继续输入下一段内容和图片，或者点击“生成 PPTX 文件”按钮以生成文件。"
+    
+    # 直接调用 GPT-4o-mini 生成回复
+    try:
+        bot_response = model_generate_markdown(message)
+    except Exception as e:
+        LOG.error(f"生成回复时出错: {e}")
+        bot_response = "抱歉，我在生成回复时遇到问题，请稍后再试。"
+
+    # 将模型回复保存到历史记录中
+    add_content_to_history(bot_response, [])
+   
+    # 更新聊天历史
     chat_history.append({"role": "assistant", "content": bot_response})
     return "", chat_history
 
