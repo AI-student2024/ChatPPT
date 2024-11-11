@@ -1,16 +1,15 @@
 import re
 import requests
 import os
-
 from abc import ABC
 from bs4 import BeautifulSoup
 from PIL import Image
 from io import BytesIO
-
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
-
-from logger import LOG  # 导入日志工具
+from logger import LOG
+from image_generator import ImageGenerator  # 导入图像生成器
+from image_quality_evaluator import ImageQualityEvaluator  # 导入图像评估器
 
 class ImageAdvisor(ABC):
     """
@@ -20,6 +19,8 @@ class ImageAdvisor(ABC):
         self.prompt_file = prompt_file
         self.prompt = self.load_prompt()
         self.create_advisor()
+        self.image_generator = ImageGenerator()  # 初始化图像生成实例
+        self.image_quality_evaluator = ImageQualityEvaluator()  # 初始化图像评估实例
 
     def load_prompt(self):
         """
@@ -40,7 +41,6 @@ class ImageAdvisor(ABC):
             ("system", self.prompt),  # 系统提示部分
             ("human", "**Content**:\n\n{input}"),  # 消息占位符
         ])
-
         self.model = ChatOpenAI(
             model="gpt-4o-mini",
             temperature=0.7,
@@ -71,22 +71,38 @@ class ImageAdvisor(ABC):
         image_pair = {}
 
         for slide_title, query in keywords.items():
-            # 检索图像
+            # 首先尝试从 Bing 检索图像
             images = self.get_bing_images(slide_title, query, num_images, timeout=1, retries=3)
             if images:
+                # 评估检索到的图片与内容的匹配度
+                best_image = None
+                highest_score = 0
                 for image in images:
-                    LOG.debug(f"Name: {image['slide_title']}, Query: {image['query']} 分辨率：{image['width']}x{image['height']}")
-            else:
-                LOG.warning(f"No images found for {slide_title}.")
-                continue
+                    score = self.image_quality_evaluator.evaluate_image_quality_with_openai(slide_text=query, image_url=image["url"])
+                    LOG.debug(f"评估图像 '{image['url']}' 与 '{query}' 的匹配度得分: {score}")
+                    if score > highest_score:
+                        best_image = image
+                        highest_score = score
 
-            # 仅处理分辨率最高的图像
-            img = images[0]
-            save_directory = f"images/{image_directory}"
-            os.makedirs(save_directory, exist_ok=True)
-            save_path = os.path.join(save_directory, f"{img['slide_title']}_1.jpeg")
-            self.save_image(img["obj"], save_path)
-            image_pair[img["slide_title"]] = save_path
+                # 判断匹配度是否足够高
+                if highest_score >= 0.7:  # 如果评分达到0.7则使用该图像
+                    save_directory = f"images/{image_directory}"
+                    os.makedirs(save_directory, exist_ok=True)
+                    save_path = os.path.join(save_directory, f"{best_image['slide_title']}_1.jpeg")
+                    self.save_image(best_image["obj"], save_path)
+                    image_pair[best_image["slide_title"]] = save_path
+                else:
+                    # 使用生成模型生成图像
+                    LOG.warning(f"Image matching score too low ({highest_score}). Generating a new image for '{slide_title}'.")
+                    generated_image_path = self.image_generator.generate_image(query, output_path=f"images/{image_directory}/{slide_title}_gen.jpg")
+                    if generated_image_path:
+                        image_pair[slide_title] = generated_image_path
+            else:
+                # 如果未找到合适图像，直接使用图像生成模型
+                LOG.warning(f"No images found for {slide_title}. Using image generator.")
+                generated_image_path = self.image_generator.generate_image(query, output_path=f"images/{image_directory}/{slide_title}_gen.jpg")
+                if generated_image_path:
+                    image_pair[slide_title] = generated_image_path
 
         content_with_images = self.insert_images(markdown_content, image_pair)
         return content_with_images, image_pair
@@ -162,6 +178,7 @@ class ImageAdvisor(ABC):
                         "height": img.height,
                         "resolution": img.width * img.height,
                         "obj": img,
+                        "url": link  # 添加图片的原始 URL
                     }
                     image_data.append(image_info)
                     break  # 成功下载图像，跳出重试循环
@@ -176,13 +193,6 @@ class ImageAdvisor(ABC):
     def save_image(self, img, save_path, format="JPEG", quality=85, max_size=1080):
         """
         保存图像到本地并压缩。
-
-        参数:
-            img (Image): 图像对象
-            save_path (str): 保存路径
-            format (str): 保存格式，默认 JPEG
-            quality (int): 图像质量，默认 85
-            max_size (int): 最大边长，默认 1080
         """
         try:
             width, height = img.size
@@ -210,13 +220,6 @@ class ImageAdvisor(ABC):
     def insert_images(self, markdown_content, image_pair):
         """
         将图像嵌入到 Markdown 内容中。
-
-        参数:
-            markdown_content (str): Markdown 内容
-            image_pair (dict): 幻灯片标题到图像路径的映射
-
-        返回:
-            new_content (str): 嵌入图像后的内容
         """
         lines = markdown_content.split('\n')
         new_lines = []
@@ -233,3 +236,25 @@ class ImageAdvisor(ABC):
             i += 1
         new_content = '\n'.join(new_lines)
         return new_content
+
+def main():
+    """
+    主函数，用于测试 ImageAdvisor 类的功能。
+    """
+    advisor = ImageAdvisor()
+
+    test_content = """
+    ## Slide 1
+    This slide discusses climate change and its impacts.
+    ## Slide 2
+    Renewable energy sources and their benefits.
+    """
+    content_with_images, image_pair = advisor.generate_images(test_content, image_directory="test_images")
+
+    LOG.info("生成的内容带图片信息：")
+    LOG.info(content_with_images)
+    LOG.info("生成的图片路径映射：")
+    LOG.info(image_pair)
+
+if __name__ == "__main__":
+    main()

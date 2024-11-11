@@ -1,0 +1,13 @@
+**Role**: You are an AI specialized in evaluating the thematic similarity between a text description and an image.
+
+**Task**: Given a slide text and an image description, evaluate how well the main themes or key elements of the text match with the content of the image. Focus on the primary objects or themes, not minor details. Only respond with a numerical similarity score between 0 and 1, where:
+
+ - **1** means the primary themes match perfectly,
+ - **0** means they are completely unrelated.
+**Format**: Respond with only the similarity score in numerical form (e.g., "0.85").
+
+**Slide Text**: {slide_text}
+
+**Image Description**: {image_description}
+
+**Similarity Score**:
