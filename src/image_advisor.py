@@ -124,21 +124,13 @@ class ImageAdvisor(ABC):
     def get_bing_images(self, slide_title, query, num_images=5, timeout=1, retries=3):
         """
         从 Bing 检索图像，最多重试3次。
-
-        参数:
-            slide_title (str): 幻灯片标题
-            query (str): 图像搜索关键词
-            num_images (int): 搜索的图像数量
-            timeout (int): 每次请求超时时间（秒），默认1秒
-            retries (int): 最大重试次数，默认3次
-
-        返回:
-            sorted_images (list): 符合条件的图像数据列表
         """
         url = f"https://www.bing.com/images/search?q={query}"
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36"
         }
+
+        LOG.info(f"开始检索图像，关键词: '{query}', 目标数量: {num_images}")
 
         # 尝试请求并设置重试逻辑
         for attempt in range(retries):
@@ -162,6 +154,7 @@ class ImageAdvisor(ABC):
                 m_json = eval(m_data)
                 if "murl" in m_json:
                     image_links.append(m_json["murl"])
+                    LOG.debug(f"发现图片链接: {m_json['murl']}")
             if len(image_links) >= num_images:
                 break
 
@@ -169,6 +162,7 @@ class ImageAdvisor(ABC):
         for link in image_links:
             for attempt in range(retries):
                 try:
+                    LOG.info(f"开始下载图片 '{link}', 尝试 {attempt + 1}/{retries}")
                     img_data = requests.get(link, headers=headers, timeout=timeout)
                     img = Image.open(BytesIO(img_data.content))
                     image_info = {
@@ -180,15 +174,20 @@ class ImageAdvisor(ABC):
                         "obj": img,
                         "url": link  # 添加图片的原始 URL
                     }
+                    LOG.info(f"成功下载图片: {link}")
                     image_data.append(image_info)
                     break  # 成功下载图像，跳出重试循环
                 except Exception as e:
                     LOG.warning(f"Attempt {attempt + 1}/{retries} failed for image '{link}': {e}")
                     if attempt == retries - 1:
                         LOG.error(f"Max retries reached for image '{link}'. Skipping.")
-        
+
+        # 排序并选择最优的图像
         sorted_images = sorted(image_data, key=lambda x: x["resolution"], reverse=True)
+        LOG.info(f"检索到的图像数量: {len(sorted_images)}，按分辨率排序后选择最优的图像")
+        
         return sorted_images
+
 
     def save_image(self, img, save_path, format="JPEG", quality=85, max_size=1080):
         """
