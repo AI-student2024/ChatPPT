@@ -1,6 +1,6 @@
 from langchain_core.chat_history import (
-    BaseChatMessageHistory,  # 基础聊天消息历史类
-    InMemoryChatMessageHistory,  # 内存中的聊天消息历史类
+    BaseChatMessageHistory,
+    InMemoryChatMessageHistory,
 )
 
 # 用于存储会话历史的字典
@@ -20,3 +20,18 @@ def get_session_history(session_id: str) -> BaseChatMessageHistory:
         # 如果会话ID不存在于存储中，创建一个新的内存聊天历史实例
         store[session_id] = InMemoryChatMessageHistory()
     return store[session_id]
+
+def clear_session_history(session_id: str):
+    """
+    清空指定会话ID的聊天历史，但保留最后一条消息。
+    
+    参数:
+        session_id (str): 会话的唯一标识符
+    """
+    if session_id in store:
+        history = store[session_id]
+        if history.messages:
+            # 保存最后一条消息并重置历史
+            last_message = history.messages[-1]
+            store[session_id] = InMemoryChatMessageHistory()
+            store[session_id].messages.append(last_message)

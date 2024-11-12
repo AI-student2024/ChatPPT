@@ -1,77 +1,134 @@
-# chatbot.py
+# src/chatbot.py
 
-from abc import ABC, abstractmethod
-
+import asyncio
+from abc import ABC
 from langchain_openai import ChatOpenAI
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder  # 导入提示模板相关类
-from langchain_core.messages import HumanMessage  # 导入消息类
-from langchain_core.runnables.history import RunnableWithMessageHistory  # 导入带有消息历史的可运行类
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.messages import HumanMessage
+from langgraph.graph import END, StateGraph, START
+from langgraph.graph.message import add_messages
+from langgraph.checkpoint.memory import MemorySaver
+from typing import Annotated
+from typing_extensions import TypedDict
 
-from logger import LOG  # 导入日志工具
-from chat_history import get_session_history
+from logger import LOG
+from chat_history import get_session_history, clear_session_history
 
+MAX_ROUNDS = 3  # 测试时设置为3轮
+
+class State(TypedDict):
+    messages: Annotated[list, add_messages]
+    round: int  # 添加轮次数
 
 class ChatBot(ABC):
-    """
-    聊天机器人基类，提供聊天功能。
-    """
     def __init__(self, prompt_file="./prompts/chatbot.txt", session_id=None):
         self.prompt_file = prompt_file
         self.session_id = session_id if session_id else "default_session_id"
-        self.prompt = self.load_prompt()
-        # LOG.debug(f"[ChatBot Prompt]{self.prompt}")
-        self.create_chatbot()
+        self.prompt = self.load_prompt()  
+        self.create_chatbot()  
 
     def load_prompt(self):
-        """
-        从文件加载系统提示语。
-        """
         try:
             with open(self.prompt_file, "r", encoding="utf-8") as file:
                 return file.read().strip()
         except FileNotFoundError:
             raise FileNotFoundError(f"找不到提示文件 {self.prompt_file}!")
 
-
     def create_chatbot(self):
-        """
-        初始化聊天机器人，包括系统提示和消息历史记录。
-        """
-        # 创建聊天提示模板，包括系统提示和消息占位符
         system_prompt = ChatPromptTemplate.from_messages([
-            ("system", self.prompt),  # 系统提示部分
-            MessagesPlaceholder(variable_name="messages"),  # 消息占位符
+            ("system", self.prompt),
+            MessagesPlaceholder(variable_name="messages"),
         ])
 
-        # 初始化 ChatOllama 模型，配置参数
         self.chatbot = system_prompt | ChatOpenAI(
             model="gpt-4o-mini",
             temperature=0.5,
             max_tokens=4096
         )
 
-        # 将聊天机器人与消息历史记录关联
-        self.chatbot_with_history = RunnableWithMessageHistory(self.chatbot, get_session_history)
+        # 配置反思提示模板，适应PPT内容的反馈
+        self.reflection_prompt = ChatPromptTemplate.from_messages([
+            (
+                "system",
+                "You are a presentation expert reviewing the user's PowerPoint content. Assess the clarity, logical flow, visual impact, and overall effectiveness of the slides."
+                " Provide detailed feedback, including suggestions for improving the structure, enhancing key points, refining language, and optimizing visuals to better engage the audience."
+                " Tailor your recommendations to ensure that the presentation effectively communicates the intended message and maintains audience interest.",
+            ),
+            MessagesPlaceholder(variable_name="messages"),
+        ])
 
-
-    def chat_with_history(self, user_input, session_id=None):
-        """
-        处理用户输入，生成包含聊天历史的回复。
-
-        参数:
-            user_input (str): 用户输入的消息
-            session_id (str, optional): 会话的唯一标识符
-
-        返回:
-            str: AI 生成的回复
-        """
-        if session_id is None:
-            session_id = self.session_id
-    
-        response = self.chatbot_with_history.invoke(
-            [HumanMessage(content=user_input)],  # 将用户输入封装为 HumanMessage
-            {"configurable": {"session_id": session_id}},  # 传入配置，包括会话ID
+        self.reflect = self.reflection_prompt | ChatOpenAI(
+            model="gpt-4o-mini",
+            temperature=0.2,
+            max_tokens=4096,
         )
 
-        LOG.debug(f"[ChatBot] {response.content}")  # 记录调试日志
-        return response.content  # 返回生成的回复内容
+    async def generation_node(self, state: State) -> State:
+
+        result = await self.chatbot.ainvoke(state['messages']) 
+        LOG.debug(f"第 {state['round']} 轮生成内容: {result.content[:100]}")
+        state['messages'] = [result]
+        return state
+
+    async def reflection_node(self, state: State) -> State:
+        LOG.debug(f"调用反思节点，当前轮次: {state['round']}")
+        cls_map = {"ai": HumanMessage, "human": HumanMessage}
+        translated = [state['messages'][0]] + [
+            cls_map[msg.type](content=msg.content) for msg in state['messages'][1:]
+        ]
+        res = await self.reflect.ainvoke(translated)
+        LOG.debug(f"第 {state['round']} 轮反思内容: {res.content[:100]}")
+        state['messages'] = [HumanMessage(content=res.content)]
+        state['round'] += 1  # 反思完成后增加轮次
+        return state
+
+    def should_continue(self, state: State):
+        if state["round"] > MAX_ROUNDS:
+            LOG.debug("达到最大轮数，终止反思循环")
+            return END
+        return "reflect"
+
+    async def chat_with_reflection(self, user_input, session_id=None):
+        if session_id is None:
+            session_id = self.session_id
+
+        LOG.debug(f"用户初始输入: {user_input}")
+
+        builder = StateGraph(State)
+        builder.add_node("writer", self.generation_node)  
+        builder.add_node("reflect", self.reflection_node)  
+        builder.add_edge(START, "writer")  
+        builder.add_conditional_edges("writer", self.should_continue)  
+        builder.add_edge("reflect", "writer")  
+        memory = MemorySaver()
+        graph = builder.compile(checkpointer=memory)  
+
+        # 初始化输入，设置round为1
+        inputs = {"messages": [HumanMessage(content=user_input)], "round": 1} 
+        config = {"configurable": {"thread_id": session_id}}  
+
+        LOG.debug("开始执行生成-反思过程")
+        final_content = ""  # 存储最终生成内容
+        async for event in graph.astream(inputs, config=config):
+            if 'writer' in event:
+                # LOG.debug(f"第 {inputs['round']} 轮生成内容: {event['writer']['messages'][0].content}")
+                final_content = event['writer']['messages'][0].content
+            elif 'reflect' in event:
+                # LOG.debug(f"第 {inputs['round']} 轮反思内容: {event['reflect']['messages'][0].content}")
+                final_content = event['reflect']['messages'][0].content
+                
+            # 每轮次后清除历史记录，只保留当前轮次的内容
+            clear_session_history(session_id)
+
+        # 不再进行额外的生成操作
+        LOG.debug(f"反思循环结束，最终输出内容: {final_content}")
+
+        # 将最终生成的版本存入ChatHistory
+        get_session_history(session_id).add_message(HumanMessage(content=final_content))
+        return final_content
+
+
+if __name__ == "__main__":
+    bot = ChatBot()
+    user_input = "介绍宇宙黑洞"
+    asyncio.run(bot.chat_with_reflection(user_input))
