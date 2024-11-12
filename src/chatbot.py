@@ -8,6 +8,7 @@ from langchain_core.messages import HumanMessage
 from langgraph.graph import END, StateGraph, START
 from langgraph.graph.message import add_messages
 from langgraph.checkpoint.memory import MemorySaver
+from langchain_core.runnables.history import RunnableWithMessageHistory
 from typing import Annotated
 from typing_extensions import TypedDict
 
@@ -35,18 +36,23 @@ class ChatBot(ABC):
             raise FileNotFoundError(f"找不到提示文件 {self.prompt_file}!")
 
     def create_chatbot(self):
+        # 创建聊天提示模板
         system_prompt = ChatPromptTemplate.from_messages([
             ("system", self.prompt),
             MessagesPlaceholder(variable_name="messages"),
         ])
 
+        # 初始化聊天模型
         self.chatbot = system_prompt | ChatOpenAI(
             model="gpt-4o-mini",
             temperature=0.5,
             max_tokens=4096
         )
 
-        # 配置反思提示模板，适应PPT内容的反馈
+        # 添加消息历史功能
+        self.chatbot_with_history = RunnableWithMessageHistory(self.chatbot, get_session_history)
+
+        # 配置反思提示模板，适应 PPT 内容反馈
         self.reflection_prompt = ChatPromptTemplate.from_messages([
             (
                 "system",
@@ -57,6 +63,7 @@ class ChatBot(ABC):
             MessagesPlaceholder(variable_name="messages"),
         ])
 
+        # 初始化反思模型
         self.reflect = self.reflection_prompt | ChatOpenAI(
             model="gpt-4o-mini",
             temperature=0.2,
@@ -64,7 +71,6 @@ class ChatBot(ABC):
         )
 
     async def generation_node(self, state: State) -> State:
-
         result = await self.chatbot.ainvoke(state['messages']) 
         LOG.debug(f"第 {state['round']} 轮生成内容: {result.content[:100]}")
         state['messages'] = [result]
@@ -111,10 +117,8 @@ class ChatBot(ABC):
         final_content = ""  # 存储最终生成内容
         async for event in graph.astream(inputs, config=config):
             if 'writer' in event:
-                # LOG.debug(f"第 {inputs['round']} 轮生成内容: {event['writer']['messages'][0].content}")
                 final_content = event['writer']['messages'][0].content
             elif 'reflect' in event:
-                # LOG.debug(f"第 {inputs['round']} 轮反思内容: {event['reflect']['messages'][0].content}")
                 final_content = event['reflect']['messages'][0].content
                 
             # 每轮次后清除历史记录，只保留当前轮次的内容
@@ -127,6 +131,27 @@ class ChatBot(ABC):
         get_session_history(session_id).add_message(HumanMessage(content=final_content))
         return final_content
 
+    def chat_with_history(self, user_input, session_id=None):
+        """
+        处理用户输入，生成包含聊天历史的回复。
+
+        参数:
+            user_input (str): 用户输入的消息
+            session_id (str, optional): 会话的唯一标识符
+
+        返回:
+            str: AI 生成的回复
+        """
+        if session_id is None:
+            session_id = self.session_id
+
+        response = self.chatbot_with_history.invoke(
+            [HumanMessage(content=user_input)],  
+            {"configurable": {"session_id": session_id}},  
+        )
+
+        LOG.debug(f"[ChatBot] {response.content}")
+        return response.content  
 
 if __name__ == "__main__":
     bot = ChatBot()
