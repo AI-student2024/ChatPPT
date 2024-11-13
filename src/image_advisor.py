@@ -85,7 +85,7 @@ class ImageAdvisor(ABC):
                         highest_score = score
 
                 # 判断匹配度是否足够高
-                if highest_score >= 0.7:  # 如果评分达到0.7则使用该图像
+                if highest_score >= 0.8:  # 如果评分达到0.8则使用该图像
                     save_directory = f"images/{image_directory}"
                     os.makedirs(save_directory, exist_ok=True)
                     save_path = os.path.join(save_directory, f"{best_image['slide_title']}_1.jpeg")
