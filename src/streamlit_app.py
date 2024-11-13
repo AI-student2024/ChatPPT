@@ -1,8 +1,7 @@
-import os
-import asyncio
 import streamlit as st
-
-# 从同一目录下的其他模块导入
+import os
+import re
+import asyncio
 from config import Config
 from chatbot import ChatBot
 from content_formatter import ContentFormatter
@@ -20,136 +19,127 @@ from docx_parser import generate_markdown_from_docx
 os.environ["LANGCHAIN_TRACING_V2"] = "true"
 os.environ["LANGCHAIN_PROJECT"] = "ChatPPT"
 
-# 实例化 Config，加载配置文件
+# 初始化配置和组件
 config = Config()
 chatbot = ChatBot(config.chatbot_prompt)
 content_formatter = ContentFormatter(config.content_formatter_prompt)
 content_assistant = ContentAssistant(config.content_assistant_prompt)
 image_advisor = ImageAdvisor(config.image_advisor_prompt)
 
-# 加载 PowerPoint 模板，并获取可用布局
 ppt_template = load_template(config.ppt_template)
 layout_manager = LayoutManager(get_layout_mapping(ppt_template))
 
-# 异步生成幻灯片内容的函数
+os.makedirs("outputs", exist_ok=True)
+
+if "history" not in st.session_state:
+    st.session_state.history = []
+
 async def generate_contents(message, history):
     try:
         texts = []
-
-        # 获取文本输入
         text_input = message.get("text")
         if text_input:
             texts.append(text_input)
 
-        # 处理上传的文件
         for uploaded_file in message.get("files", []):
-            LOG.debug(f"[上传文件]: {uploaded_file}")
-            file_ext = os.path.splitext(uploaded_file.name)[1].lower()
+            LOG.debug(f"[处理文件]: {uploaded_file['name']}")
+            file_ext = os.path.splitext(uploaded_file['name'])[1].lower()
             if file_ext in ('.wav', '.flac', '.mp3'):
-                audio_text = await asr(uploaded_file)
+                audio_text = await asr(uploaded_file['file'])
                 texts.append(audio_text)
             elif file_ext in ('.docx', '.doc'):
-                raw_content = generate_markdown_from_docx(uploaded_file)
+                raw_content = generate_markdown_from_docx(uploaded_file['file'])
                 markdown_content = content_formatter.format(raw_content)
                 return content_assistant.adjust_single_picture(markdown_content)
-            else:
-                LOG.debug(f"[格式不支持]: {uploaded_file}")
 
-        # 合并文本和转录结果
         user_requirement = "需求如下:\n" + "\n".join(texts)
-        LOG.info(user_requirement)
+        LOG.info(f"用户需求: {user_requirement}")
 
-        # 调用生成-反思循环
         slides_content = await chatbot.chat_with_reflection(user_requirement)
+        LOG.debug(f"生成的幻灯片内容: {slides_content}")
+
+        # 立即存储 slides_content
+        if slides_content:
+            st.session_state.history.append({"role": "assistant", "content": slides_content})
+            LOG.debug(f"History after generating content: {st.session_state.history}")
+        
         return slides_content
     except Exception as e:
         LOG.error(f"[内容生成错误]: {e}")
-        raise Exception("网络问题，请重试:)")
+        st.error("生成内容时出错，请重试。")
+        return None
 
-# Streamlit 兼容异步支持的包装函数
-def async_generate_contents(*args, **kwargs):
-    return asyncio.run(generate_contents(*args, **kwargs))
-
-# 配图生成函数
-def handle_image_generate(history):
+# 配图
+def handle_image_generate():
     try:
-        # 检查 history 是否为空
-        if not history:
-            LOG.warning("历史记录为空，无法生成配图")
-            raise ValueError("历史记录为空，无法生成配图")
+        slides_content = st.session_state.history[-1]["content"]
+        LOG.debug(f"幻灯片内容（配图前）: {slides_content}")
+        
+        content_with_images, _ = image_advisor.generate_images(slides_content)
+        LOG.debug(f"配图后的内容: {content_with_images}")
 
-        # 获取最新的内容
-        latest_entry = history[-1]
-        slides_content = latest_entry.get("content")
-
-        if not slides_content:
-            LOG.warning("最新条目没有内容，无法生成配图")
-            raise ValueError("最新条目没有内容，无法生成配图")
-
-        # 生成配图
-        content_with_images, image_pair = image_advisor.generate_images(slides_content)
-
-        # 创建新的消息
-        new_message = {"role": "assistant", "content": content_with_images}
-        history.append(new_message)
-
-        return history
-
-    except IndexError as e:
-        LOG.error(f"[配图生成错误]: {e}")
-        raise Exception("【提示】未找到合适配图，请重试！")
-
-    except ValueError as e:
-        LOG.error(f"[配图生成错误]: {e}")
-        raise Exception("【提示】未找到合适配图，请重试！")
-
+        # 更新 history 中的内容
+        st.session_state.history.append({"role": "assistant", "content": content_with_images})
+        st.write("生成配图后的内容:", content_with_images)
     except Exception as e:
         LOG.error(f"[配图生成错误]: {e}")
-        raise Exception("【提示】未找到合适配图，请重试！")
+        st.error("配图生成出错，请重试。")
 
-# 生成 PowerPoint 的函数
-def handle_generate(history):
+# PowerPoint generation handler
+def handle_generate():
     try:
-        slides_content = history[-1]["content"]
+        if not st.session_state.history:
+            LOG.error("No content in session history to generate PowerPoint.")
+            st.error("请先生成内容再生成PowerPoint。")
+            return
+        
+        # 确认 slides_content 的内容格式
+        slides_content = st.session_state.history[-1]["content"]
+        LOG.debug(f"Slides content before parsing: {slides_content}")
+
+        # 调用解析函数
         powerpoint_data, presentation_title = parse_input_text(slides_content, layout_manager)
+        LOG.debug(f"Parsed powerpoint_data: {powerpoint_data}")
+        LOG.debug(f"Parsed presentation_title: {presentation_title}")
+
+        # 验证是否生成了内容
+        if not powerpoint_data or not powerpoint_data.slides:
+            LOG.error("内容为空，无法生成有效的 PowerPoint 文件")
+            st.error("内容解析错误，请检查输入数据。")
+            return
+
+        # 保存文件
+        presentation_title = presentation_title or "Untitled_Presentation"
+        presentation_title = re.sub(r'[\\/*?:"<>|]', "", presentation_title)
         output_pptx = f"outputs/{presentation_title}.pptx"
 
         generate_presentation(powerpoint_data, config.ppt_template, output_pptx)
-        return output_pptx
+        st.success("PowerPoint生成成功！点击下载:")
+        with open(output_pptx, "rb") as ppt_file:
+            st.download_button(label="Download PowerPoint", data=ppt_file, file_name=f"{presentation_title}.pptx")
     except Exception as e:
-        LOG.error(f"[PPT 生成错误]: {e}")
-        raise Exception("【提示】请先输入你的主题内容或上传文件")
+        LOG.error(f"[PPT生成错误]: {e}")
+        st.error("生成 PPT 时出错。请检查输入内容并重试。")
 
-# 创建 Streamlit 页面
+# Streamlit界面设置
 st.title("ChatPPT")
+st.markdown("## AI-Powered PPT Generation")
 
-# 创建聊天记录容器
-history = []
-chat_container = st.container()
+user_input = st.text_area("输入主题内容或上传音频文件")
+if user_input:
+    st.session_state.history.append({"role": "user", "content": user_input})
 
-# 用户输入区域
-user_input = st.text_area("输入你的主题内容或上传音频文件", "")
-file_uploader = st.file_uploader("上传文件", type=['wav', 'flac', 'mp3', 'docx', 'doc'])
+uploaded_files = st.file_uploader("上传文件", accept_multiple_files=True)
+files_data = [{"name": f.name, "file": f} for f in uploaded_files] if uploaded_files else []
 
-# 提交按钮
-if st.button('提交'):
-    message = {"text": user_input, "files": [file_uploader] if file_uploader else []}
-    response = async_generate_contents(message, history)
-    history.append({"role": "assistant", "content": response})
-    chat_container.write(response)
+if st.button("生成内容"):
+    with st.spinner("正在生成内容..."):
+        slides_content = asyncio.run(generate_contents({"text": user_input, "files": files_data}, st.session_state.history))
+        if slides_content:
+            st.write("生成的内容:", slides_content)
 
-# 配图按钮
-if st.button('一键为 PowerPoint 配图'):
-    updated_history = handle_image_generate(history)
-    chat_container.write(updated_history[-1]['content'])
+if st.button("为PowerPoint生成配图"):
+    handle_image_generate()
 
-# 生成 PPT 按钮
-if st.button('一键生成 PowerPoint'):
-    pptx_path = handle_generate(history)
-    with open(pptx_path, "rb") as file:
-        st.download_button(
-            label="下载 PPT",
-            data=file,
-            file_name=os.path.basename(pptx_path),
-            mime="application/vnd.openxmlformats-officedocument.presentationml.presentation"
-        )
+if st.button("生成PowerPoint"):
+    handle_generate()

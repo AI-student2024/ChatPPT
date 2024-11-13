@@ -124,8 +124,12 @@ class ChatBot(ABC):
             # 每轮次后清除历史记录，只保留当前轮次的内容
             clear_session_history(session_id)
 
-        # 不再进行额外的生成操作
-        LOG.debug(f"反思循环结束，最终输出内容: {final_content}")
+        # 在反思循环结束后，执行最后一次内容生成
+        LOG.debug("反思结束，生成最终内容")
+        final_event = await self.generation_node(inputs)
+        final_content = final_event["messages"][0].content
+        LOG.debug(f"[ChatBot 最终生成输出] {final_content}") 
+
 
         # 将最终生成的版本存入ChatHistory
         get_session_history(session_id).add_message(HumanMessage(content=final_content))
